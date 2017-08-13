@@ -8,13 +8,13 @@
 GLWidget::GLWidget( QWidget* parent, const char* name, bool fs )
     : QGLWidget( parent )
 {
-
+    rTri = 0.0;
+    rQuad = 0.0;
     fullscreen = fs;
     setGeometry( 0, 0, 640, 480 );
     setWindowTitle( name );
     if ( fullscreen )
         showFullScreen();
-
 }
 
 GLWidget::~GLWidget(){
@@ -47,6 +47,7 @@ void GLWidget::paintGL()
     glLoadIdentity();
 
     glTranslatef( -1.5,  0.0, -6.0 );
+    glRotatef( rTri,  0.0,  1.0,  0.0 );
     glBegin( GL_TRIANGLES );
         glColor3f( 0.0, 0.0, 1.0 );
         glVertex3f(  0.0,  1.0,  0.0 );
@@ -55,13 +56,14 @@ void GLWidget::paintGL()
         glColor3f( 1.0, 0.0, 0.0 );
         glVertex3f(  1.0,  -1.0,  0.0 );
 
-        glVertex3f(  1.0,  1.0,  0.0 );
-        glVertex3f(  1.0,  2.0,  0.0 );
-        glVertex3f(  2.0,  2.0,  0.0 );
+//        glVertex3f(  1.0,  1.0,  0.0 );
+//        glVertex3f(  1.0,  2.0,  0.0 );
+//        glVertex3f(  2.0,  2.0,  0.0 );
     glEnd();
 
-    glTranslatef(  3.0,  0.0,  0.0 );
-//    glLoadIdentity();
+    glLoadIdentity();
+    glTranslatef(  1.5,  0.0,  -6.0 );
+    glRotatef( rQuad,  1.0,  0.0,  0.0 );
 //    glTranslatef(  0.0,  0.0,  -4.0 );
     glColor3f( 0.5, 0.5, 1.0 );
     glBegin( GL_QUADS );
@@ -71,6 +73,8 @@ void GLWidget::paintGL()
         glVertex3f( -1.0, -1.0,  0.0 );
     glEnd();
 
+    rTri += 0.2;
+    rQuad -= 0.15;
 }
 
 void GLWidget::resizeGL( int width, int height )

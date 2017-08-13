@@ -20,6 +20,8 @@ protected:
     void keyPressEvent(QKeyEvent *e);
 
     bool fullscreen;
+    GLfloat rTri;
+    GLfloat rQuad;
 };
 
 #endif // GLWIDGET_H
