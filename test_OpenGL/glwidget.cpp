@@ -49,28 +49,77 @@ void GLWidget::paintGL()
     glTranslatef( -1.5,  0.0, -6.0 );
     glRotatef( rTri,  0.0,  1.0,  0.0 );
     glBegin( GL_TRIANGLES );
-        glColor3f( 0.0, 0.0, 1.0 );
+        //front
+        glColor3f( 1.0, 0.0, 0.0 );
         glVertex3f(  0.0,  1.0,  0.0 );
         glColor3f( 0.0, 1.0, 0.0 );
-        glVertex3f(  -1.0,  -1.0,  0.0 );
+        glVertex3f( -1.0, -1.0,  1.0 );
+        glColor3f( 0.0, 0.0, 1.0 );
+        glVertex3f(  1.0, -1.0,  1.0 );
+        //right
         glColor3f( 1.0, 0.0, 0.0 );
-        glVertex3f(  1.0,  -1.0,  0.0 );
-
-//        glVertex3f(  1.0,  1.0,  0.0 );
-//        glVertex3f(  1.0,  2.0,  0.0 );
-//        glVertex3f(  2.0,  2.0,  0.0 );
+        glVertex3f(  0.0,  1.0,  0.0 );
+        glColor3f( 0.0, 0.0, 1.0 );
+        glVertex3f(  1.0, -1.0,  1.0 );
+        glColor3f( 0.0, 1.0, 0.0 );
+        glVertex3f(  1.0, -1.0, -1.0 );
+        //behind
+        glColor3f( 1.0, 0.0, 0.0 );
+        glVertex3f(  0.0,  1.0,  0.0 );
+        glColor3f( 0.0, 1.0, 0.0 );
+        glVertex3f(  1.0, -1.0, -1.0 );
+        glColor3f( 0.0, 0.0, 1.0 );
+        glVertex3f( -1.0, -1.0, -1.0 );
+        //left
+        glColor3f( 1.0, 0.0, 0.0 );
+        glVertex3f(  0.0,  1.0,  0.0 );
+        glColor3f( 0.0, 0.0, 1.0 );
+        glVertex3f( -1.0, -1.0, -1.0 );
+        glColor3f( 0.0, 1.0, 0.0 );
+        glVertex3f( -1.0, -1.0,  1.0 );
     glEnd();
 
     glLoadIdentity();
-    glTranslatef(  1.5,  0.0,  -6.0 );
-    glRotatef( rQuad,  1.0,  0.0,  0.0 );
-//    glTranslatef(  0.0,  0.0,  -4.0 );
-    glColor3f( 0.5, 0.5, 1.0 );
+    glTranslatef(  1.5,  0.0, -7.0 );
+    glRotatef( rQuad,  1.0,  1.0,  1.0 );
     glBegin( GL_QUADS );
-        glVertex3f( -1.0,  1.0,  0.0 );
-        glVertex3f(  1.0,  1.0,  0.0 );
-        glVertex3f(  1.0, -1.0,  0.0 );
-        glVertex3f( -1.0, -1.0,  0.0 );
+        //up
+        glColor3f( 0.0, 1.0, 0.0 );
+        glVertex3f(  1.0,  1.0, -1.0 );
+        glVertex3f( -1.0,  1.0, -1.0 );
+        glVertex3f( -1.0,  1.0,  1.0 );
+        glVertex3f(  1.0,  1.0,  1.0 );
+        //down
+        glColor3f( 1.0, 0.5, 0.0 );
+        glVertex3f(  1.0, -1.0,  1.0 );
+        glVertex3f( -1.0, -1.0,  1.0 );
+        glVertex3f( -1.0, -1.0, -1.0 );
+        glVertex3f(  1.0, -1.0, -1.0 );
+        //front
+        glColor3f( 1.0, 0.0, 0.0 );
+        glVertex3f(  1.0,  1.0,  1.0 );
+        glVertex3f( -1.0,  1.0,  1.0 );
+        glVertex3f( -1.0, -1.0,  1.0 );
+        glVertex3f(  1.0, -1.0,  1.0 );
+        //behind
+        glColor3f( 1.0, 1.0, 0.0 );
+        glVertex3f(  1.0, -1.0, -1.0 );
+        glVertex3f( -1.0, -1.0, -1.0 );
+        glVertex3f( -1.0,  1.0, -1.0 );
+        glVertex3f(  1.0,  1.0, -1.0 );
+        //
+        glColor3f( 0.0, 0.0, 1.0 );
+        glVertex3f( -1.0,  1.0,  1.0 );
+        glVertex3f( -1.0,  1.0, -1.0 );
+        glVertex3f( -1.0, -1.0, -1.0 );
+        glVertex3f( -1.0, -1.0,  1.0 );
+        //
+        glColor3f( 1.0, 0.0, 1.0 );
+        glVertex3f(  1.0,  1.0, -1.0 );
+        glVertex3f(  1.0,  1.0,  1.0 );
+        glVertex3f(  1.0, -1.0,  1.0 );
+        glVertex3f(  1.0, -1.0, -1.0 );
+
     glEnd();
 
     rTri += 0.2;
