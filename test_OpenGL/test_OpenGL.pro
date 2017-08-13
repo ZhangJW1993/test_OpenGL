@@ -7,6 +7,8 @@
 QT       += core gui opengl \
             opengl
 
+DATA_DIR = $${PWD}/data
+
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = test_OpenGL
@@ -19,6 +21,8 @@ SOURCES += main.cpp\
 
 HEADERS  += mainwindow.h\
                glwidget.h
+
+debug: DESTDIR = $${PWD}/debug
 
 # using pkg-config
 linux {
