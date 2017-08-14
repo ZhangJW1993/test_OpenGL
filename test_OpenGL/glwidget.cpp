@@ -9,6 +9,11 @@ GLWidget::GLWidget( QWidget* parent, const char* name, bool fs )
     : QGLWidget( parent )
 {
     xRot = yRot = zRot = 0.0;
+    zoom = -5.0;
+    xSpeed = ySpeed = 0.0;
+    filter = 0;
+    light = false;
+
     fullscreen = fs;
     setGeometry( 0, 0, 640, 480 );
     setWindowTitle( name );
@@ -27,18 +32,19 @@ void GLWidget::initializeGL(){
     //载入纹理。
     loadGLTextures();
 
-    //启用纹理。如果没有启用的话，你的对象看起来永远都是纯白色。
     glEnable( GL_TEXTURE_2D );
-
     glShadeModel( GL_SMOOTH );
-    glClearColor(0.0, 0.0, 0.0, 1.0);
+    glClearColor( 0.0, 0.0, 0.0, 0.5 );
     glClearDepth( 1.0 );
     glEnable( GL_DEPTH_TEST );
     glDepthFunc( GL_LEQUAL );
-
-    //真正精细的透视修正
     glHint( GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST );
 
+    glLightfv( GL_LIGHT1, GL_AMBIENT, lightAmbient );
+    glLightfv( GL_LIGHT1, GL_DIFFUSE, lightDiffuse );
+    glLightfv( GL_LIGHT1, GL_POSITION, lightPosition );
+
+    glEnable( GL_LIGHT1 );
 }
 
 void GLWidget::paintGL()
@@ -49,14 +55,11 @@ void GLWidget::paintGL()
     //重置当前的模型观察矩阵。
     glLoadIdentity();
 
-    glTranslatef(  0.0,  0.0, -5.0 );
-    //根据xRot、yRot、zRot的实际值来旋转正方体。
+    glTranslatef(  0.0,  0.0, zoom );
     glRotatef( xRot,  1.0,  0.0,  0.0 );
     glRotatef( yRot,  0.0,  1.0,  0.0 );
-    glRotatef( zRot,  0.0,  0.0,  1.0 );
-    //选择我们使用的纹理。如果您在您的场景中使用多个纹理，您应该使用来glBindTexture(GL_TEXTURE_2D, texture[所使用纹理对应的数字]) 选择要绑定的纹理。当您想改变纹理时，应该绑定新的纹理。必须在glBegin()之前或glEnd()之后绑定。
-    glBindTexture( GL_TEXTURE_2D, texture[0] );
-    //为了将纹理正确的映射到四边形上，您必须将纹理的右上角映射到四边形的右上角，纹理的左上角映射到四边形的左上角，纹理的右下角映射到四边形的右下角，纹理的左下角映射到四边形的左下角。如果映射错误的话，图像显示时可能上下颠倒，侧向一边或者什么都不是。
+    glBindTexture( GL_TEXTURE_2D, texture[filter] );
+    //draw quads
     glBegin( GL_QUADS );
     //前面。
         glTexCoord2f( 0.0, 0.0 ); glVertex3f( -1.0, -1.0,  1.0 );
@@ -90,9 +93,10 @@ void GLWidget::paintGL()
         glTexCoord2f( 0.0, 1.0 ); glVertex3f( -1.0,  1.0, -1.0 );
       glEnd();
 
-      xRot += 0.3;
-      yRot += 0.2;
-      zRot += 0.4;
+      xRot += xSpeed;
+      yRot += ySpeed;
+
+      update();
 }
 
 void GLWidget::resizeGL( int width, int height )
@@ -119,65 +123,122 @@ void GLWidget::resizeGL( int width, int height )
 void GLWidget::keyPressEvent( QKeyEvent *e )
 {
     switch ( e->key() )
-    {
-        case Qt::Key_F2:
-            fullscreen = !fullscreen;
-            if ( fullscreen )
-            {
-              showFullScreen();
-            }
-            else
-            {
-              showNormal();
-              setGeometry( 0, 0, 640, 480 );
-            }
-            updateGL();
-            break;
-            //如果按下了F2键，那么屏幕是否全屏的状态就切换一次。然后再根据需要，显示所要的全屏窗口或者普通窗口。
-
-        case Qt::Key_Escape:
-            close();   //如果按下了Escape键，程序退出。
+      {
+    //按下了L键，就可以切换是否打开光源。
+      case Qt::Key_L:
+        light = !light;
+        if ( !light )
+        {
+          glDisable( GL_LIGHTING );
+        }
+        else
+        {
+          glEnable( GL_LIGHTING );
+        }
+        updateGL();
+        break;
+    //按下了F键，就可以转换一下所使用的纹理（就是变换了纹理滤波方式的纹理）。
+      case Qt::Key_F:
+        filter += 1;;
+        if ( filter > 2 )
+        {
+          filter = 0;
+        }
+        updateGL();
+        break;
+    //按下了PageUp键，将木箱移向屏幕内部。
+      case Qt::Key_Comma:
+        zoom -= 0.2;
+        updateGL();
+        break;
+    //按下了PageDown键，将木箱移向屏幕外部。
+      case Qt::Key_Period:
+        zoom += 0.2;
+        updateGL();
+        break;
+    //按下了Up方向键，减少xSpeed。
+      case Qt::Key_Up:
+        xSpeed -= 0.01;
+        updateGL();
+        break;
+    //按下了Dowm方向键，增加xSpeed。
+      case Qt::Key_Down:
+        xSpeed += 0.01;
+        updateGL();
+        break;
+    //按下了Right方向键，增加ySpeed。
+      case Qt::Key_Right:
+        ySpeed += 0.01;
+        updateGL();
+        break;
+    //按下了Left方向键，减少ySpeed。
+      case Qt::Key_Left:
+        ySpeed -= 0.01;
+        updateGL();
+        break;
+      case Qt::Key_F2:
+        fullscreen = !fullscreen;
+        if ( fullscreen )
+        {
+          showFullScreen();
+        }
+        else
+        {
+          showNormal();
+          setGeometry( 0, 0, 640, 480 );
+        }
+        update();
+        break;
+      case Qt::Key_Escape:
+        close();
     }
 }
 
 void GLWidget::loadGLTextures()
 {
-  QImage tex, buf;
-  //qDebug()<<QDir::currentPath();
-  if ( !buf.load( "../data/texture.png" ) )
-  {
-    qWarning( "Could not read image file, using single-color instead." );
-    QImage dummy( 128, 128, QImage::Format_ARGB32 );
-    dummy.fill( Qt::green );
-    buf = dummy;
-  }
-  //这里使用了QGLWidget类中提供的一个静态函数converToGLFormat()，专门用来转换图片的，具体情况请参见相应文档。
-  tex = QGLWidget::convertToGLFormat( buf ); //convert r and b and Coord y
-  /**创建一个纹理。
-   * 告诉OpenGL我们想生成一个纹理名字(如果您想载入多个纹理，加大数字)。
-  **/
-  glGenTextures( 1, &texture[0] );
-  /**使用来自位图数据生成的典型纹理。
-   * 告诉OpenGL将纹理名字texture[0]绑定到纹理目标上。
-   * 2D纹理只有高度（在Y轴上）和宽度（在X轴上）。主函数将纹理名字指派给纹理数据。本例中我们告知OpenGL，&texture[0]处的内存已经可用。我们创建的纹理将存储在&texture[0]的指向的内存区域。
-  **/
-  glBindTexture( GL_TEXTURE_2D, texture[0] );
-  /**这里真正的创建纹理。
-   * GL_TEXTURE_2D告诉OpenGL此纹理是一个2D纹理。
-   * 数字零代表图像的详细程度，通常就由它为零去了。
-   * 数字三是数据的成分数。 因为图像是由红色，绿色，蓝色组成。
-   * tex.width()是纹理的宽度。tex.height()是纹理的高度。
-   * 数字零是边框的值，一般就是零。
-   * GL_RGBA 告诉OpenGL图像数据由红、绿、蓝三色数据以及alpha通道数据组成，这个是QGLWidget类的converToGLFormat()函数的原因。
-   * GL_UNSIGNED_BYTE 意味着组成图像的数据是无符号字节类型的。最后tex.bits()告诉OpenGL纹理数据的来源。
-  **/
-  glTexImage2D( GL_TEXTURE_2D, 0, 3, tex.width(), tex.height(), 0,
-                GL_RGBA, GL_UNSIGNED_BYTE, tex.bits() );
-  /**告诉OpenGL在显示图像时，当它比放大得原始的纹理大（GL_TEXTURE_MAG_FILTER）或缩小得比原始得纹理小（GL_TEXTURE_MIN_FILTER）时OpenGL采用的滤波方式。
-   * 通常这两种情况下我都采用GL_LINEAR。这使得纹理从很远处到离屏幕很近时都平滑显示。使用GL_LINEAR需要CPU和显卡做更多的运算。如果您的机器很慢，您也许应该采用GL_NEAREST。
-   * 过滤的纹理在放大的时候，看起来斑驳的很。您也可以结合这两种滤波方式。在近处时使用GL_LINEAR，远处时GL_NEAREST。
-  **/
-  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+    QImage tex, buf;
+    //qDebug()<<QDir::currentPath();
+    if ( !buf.load( "../data/texture.png" ) )
+    {
+        qWarning( "Could not read image file, using single-color instead." );
+        QImage dummy( 128, 128, QImage::Format_ARGB32 );
+        dummy.fill( Qt::green );
+        buf = dummy;
+    }
+    tex = QGLWidget::convertToGLFormat( buf );
+    //我们这里创建了3个纹理。
+    glGenTextures( 3, &texture[0] );
+
+    glBindTexture( GL_TEXTURE_2D, texture[0] );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+    glTexImage2D( GL_TEXTURE_2D, 0, 3, tex.width(), tex.height(), 0,
+        GL_RGBA, GL_UNSIGNED_BYTE, tex.bits() );
+
+    glBindTexture( GL_TEXTURE_2D, texture[1] );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+    glTexImage2D( GL_TEXTURE_2D, 0, 3, tex.width(), tex.height(), 0,
+        GL_RGBA, GL_UNSIGNED_BYTE, tex.bits() );
+
+    //Mipmapping！当您向屏幕绘制一个mipmapped纹理的时候，OpenGL将选择它已经创建的外观最佳的纹理(带有更多细节)来绘制，而不仅仅是缩放原先的图像（这将导致细节丢失）
+    glBindTexture( GL_TEXTURE_2D, texture[2] );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST );
+
+    //可以使用任意的位图来创建纹理。OpenGL将自动将它缩放到正常的大小。
+
+    /**这一行生成 mipmapped 纹理。
+     * 使用三种颜色（红，绿，蓝）来生成一个2D纹理。
+     * tex.width()是位图宽度，tex.height()是位图高度，
+     * extureImage[0]->sizeY 是位图高度，
+     * GL_RGBA意味着我们依次使用RGBA色彩。
+     * GL_UNSIGNED_BYTE意味着纹理数据的单位是字节。
+     * tex.bits()指向我们创建纹理所用的位图。
+    **/
+    gluBuild2DMipmaps( GL_TEXTURE_2D, GL_RGB,
+                       tex.width(), tex.height(),
+                       GL_RGBA, GL_UNSIGNED_BYTE,
+                       tex.bits() );
 
 }

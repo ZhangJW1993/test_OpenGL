@@ -14,7 +14,6 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = test_OpenGL
 TEMPLATE = app
 
-
 SOURCES += main.cpp\
         mainwindow.cpp\
         glwidget.cpp
@@ -23,6 +22,8 @@ HEADERS  += mainwindow.h\
                glwidget.h
 
 debug: DESTDIR = $${PWD}/debug
+
+CONFIG += C++11
 
 # using pkg-config
 linux {
