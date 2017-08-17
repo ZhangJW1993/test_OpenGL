@@ -13,6 +13,7 @@ GLWidget::GLWidget( QWidget* parent, const char* name, bool fs )
     xSpeed = ySpeed = 0.0;
     filter = 0;
     light = false;
+    blend = false;
 
     fullscreen = fs;
     setGeometry( 0, 0, 640, 480 );
@@ -45,6 +46,9 @@ void GLWidget::initializeGL(){
     glLightfv( GL_LIGHT1, GL_POSITION, lightPosition );
 
     glEnable( GL_LIGHT1 );
+
+    glColor4f( 1.0, 1.0, 1.0, 0.5 );
+    glBlendFunc( GL_SRC_ALPHA, GL_ONE );
 }
 
 void GLWidget::paintGL()
@@ -134,6 +138,20 @@ void GLWidget::keyPressEvent( QKeyEvent *e )
         else
         {
           glEnable( GL_LIGHTING );
+        }
+        updateGL();
+        break;
+    case Qt::Key_B:
+        blend = !blend;
+        if ( blend )
+        {
+          glEnable( GL_BLEND );
+          glDisable( GL_DEPTH_TEST );
+        }
+        else
+        {
+          glDisable( GL_BLEND );
+          glEnable( GL_DEPTH_TEST );
         }
         updateGL();
         break;
