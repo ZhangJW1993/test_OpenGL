@@ -4,6 +4,16 @@
 #include <QtGui/QOpenGLShaderProgram>
 #include <QGLWidget>
 
+//这个常量num存储的是我们绘制的星星的总数。
+const GLuint num = 50;
+
+typedef struct
+{
+  int r, g, b;
+  GLfloat dist;
+  GLfloat angle;
+}stars;
+
 class GLWidget : public QGLWidget
 {
     Q_OBJECT
@@ -19,6 +29,7 @@ protected:
     void paintGL();
     void resizeGL( int width, int height );
     void keyPressEvent(QKeyEvent *e);
+    void timerEvent( QTimerEvent * );
 
     void loadGLTextures();
 
@@ -26,16 +37,15 @@ protected:
 
     GLfloat xRot, yRot, zRot;
     GLfloat zoom;
-    GLfloat xSpeed, ySpeed;
-    GLuint texture[3];
-    GLuint filter;
+    GLfloat tilt;
+    GLfloat spin;
+    GLuint loop;
+    GLuint texture[1];
 
-    bool light;
-    bool blend;
+    bool twinkle;
 
-    GLfloat lightAmbient[4] = { 0.5, 0.5, 0.5, 1.0 };
-    GLfloat lightDiffuse[4] = { 1.0, 1.0, 1.0, 1.0 };
-    GLfloat lightPosition[4] = { 0.0, 0.0, 2.0, 1.0 };
+    stars star[num];
+
 };
 
 #endif // GLWIDGET_H

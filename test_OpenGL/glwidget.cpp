@@ -9,17 +9,21 @@ GLWidget::GLWidget( QWidget* parent, const char* name, bool fs )
     : QGLWidget( parent )
 {
     xRot = yRot = zRot = 0.0;
-    zoom = -5.0;
-    xSpeed = ySpeed = 0.0;
-    filter = 0;
-    light = false;
-    blend = false;
+    zoom = -15.0;
+    tilt = 90.0;
+    spin = 0.0;
+    loop = 0;
+
+    twinkle = false;
 
     fullscreen = fs;
     setGeometry( 0, 0, 640, 480 );
     setWindowTitle( name );
+
     if ( fullscreen )
-        showFullScreen();
+    showFullScreen();
+
+    startTimer( 5 );
 }
 
 GLWidget::~GLWidget(){
@@ -41,14 +45,16 @@ void GLWidget::initializeGL(){
     glDepthFunc( GL_LEQUAL );
     glHint( GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST );
 
-    glLightfv( GL_LIGHT1, GL_AMBIENT, lightAmbient );
-    glLightfv( GL_LIGHT1, GL_DIFFUSE, lightDiffuse );
-    glLightfv( GL_LIGHT1, GL_POSITION, lightPosition );
-
-    glEnable( GL_LIGHT1 );
-
-    glColor4f( 1.0, 1.0, 1.0, 0.5 );
     glBlendFunc( GL_SRC_ALPHA, GL_ONE );
+    glEnable( GL_BLEND );
+    for ( loop = 0; loop < num; loop++ )
+    {
+        star[loop].angle = 0.0;
+        star[loop].dist = ( float(loop)/num ) * 5.0;
+        star[loop].r = rand() % 256;
+        star[loop].g = rand() % 256;
+        star[loop].b = rand() % 256;
+    }
 }
 
 void GLWidget::paintGL()
@@ -56,51 +62,53 @@ void GLWidget::paintGL()
     //clear屏幕和深度缓存。
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-    //重置当前的模型观察矩阵。
-    glLoadIdentity();
+    glBindTexture( GL_TEXTURE_2D, texture[0] );
+    for ( loop = 0; loop < num; loop++ )
+    {
+        //绘制每颗星星之前，重置模型观察矩阵
+        glLoadIdentity();
+        glTranslatef( 0.0, 0.0, zoom );
+        glRotatef( tilt, 1.0, 0.0, 0.0 );
+        glRotatef( star[loop].angle, 0.0, 1.0, 0.0 );
+        glTranslatef( star[loop].dist, 0.0, 0.0 );  //
+        glRotatef( -star[loop].angle, 0.0, 1.0, 0.0 );
+        glRotatef( -tilt, 1.0, 0.0, 0.0 );
 
-    glTranslatef(  0.0,  0.0, zoom );
-    glRotatef( xRot,  1.0,  0.0,  0.0 );
-    glRotatef( yRot,  0.0,  1.0,  0.0 );
-    glBindTexture( GL_TEXTURE_2D, texture[filter] );
-    //draw quads
-    glBegin( GL_QUADS );
-    //前面。
-        glTexCoord2f( 0.0, 0.0 ); glVertex3f( -1.0, -1.0,  1.0 );
-        glTexCoord2f( 1.0, 0.0 ); glVertex3f(  1.0, -1.0,  1.0 );
-        glTexCoord2f( 1.0, 1.0 ); glVertex3f(  1.0,  1.0,  1.0 );
-        glTexCoord2f( 0.0, 1.0 ); glVertex3f( -1.0,  1.0,  1.0 );
-    //后面。
-        glTexCoord2f( 1.0, 0.0 ); glVertex3f( -1.0, -1.0, -1.0 );
-        glTexCoord2f( 1.0, 1.0 ); glVertex3f( -1.0,  1.0, -1.0 );
-        glTexCoord2f( 0.0, 1.0 ); glVertex3f(  1.0,  1.0, -1.0 );
-        glTexCoord2f( 0.0, 0.0 ); glVertex3f(  1.0, -1.0, -1.0 );
-    //顶面。
-        glTexCoord2f( 0.0, 1.0 ); glVertex3f( -1.0,  1.0, -1.0 );
-        glTexCoord2f( 0.0, 0.0 ); glVertex3f( -1.0,  1.0,  1.0 );
-        glTexCoord2f( 1.0, 0.0 ); glVertex3f(  1.0,  1.0,  1.0 );
-        glTexCoord2f( 1.0, 1.0 ); glVertex3f(  1.0,  1.0, -1.0 );
-    //底面。
-        glTexCoord2f( 1.0, 1.0 ); glVertex3f( -1.0, -1.0, -1.0 );
-        glTexCoord2f( 0.0, 1.0 ); glVertex3f(  1.0, -1.0, -1.0 );
-        glTexCoord2f( 0.0, 0.0 ); glVertex3f(  1.0, -1.0,  1.0 );
-        glTexCoord2f( 1.0, 0.0 ); glVertex3f( -1.0, -1.0,  1.0 );
-    //右面。
-        glTexCoord2f( 1.0, 0.0 ); glVertex3f(  1.0, -1.0, -1.0 );
-        glTexCoord2f( 1.0, 1.0 ); glVertex3f(  1.0,  1.0, -1.0 );
-        glTexCoord2f( 0.0, 1.0 ); glVertex3f(  1.0,  1.0,  1.0 );
-        glTexCoord2f( 0.0, 0.0 ); glVertex3f(  1.0, -1.0,  1.0 );
-    //左面。
-        glTexCoord2f( 0.0, 0.0 ); glVertex3f( -1.0, -1.0, -1.0 );
-        glTexCoord2f( 1.0, 0.0 ); glVertex3f( -1.0, -1.0,  1.0 );
-        glTexCoord2f( 1.0, 1.0 ); glVertex3f( -1.0,  1.0,  1.0 );
-        glTexCoord2f( 0.0, 1.0 ); glVertex3f( -1.0,  1.0, -1.0 );
-      glEnd();
+        if ( twinkle )
+        {
+            glColor4ub( star[(num-loop)-1].r,
+                star[(num-loop)-1].g,
+                star[(num-loop)-1].b, 255 );
+            glBegin( GL_QUADS );
+                glTexCoord2f( 0.0, 0.0 ); glVertex3f( -1.0, -1.0, 0.0 );
+                glTexCoord2f( 1.0, 0.0 ); glVertex3f( 1.0, -1.0, 0.0 );
+                glTexCoord2f( 1.0, 1.0 ); glVertex3f( 1.0, 1.0, 0.0 );
+                glTexCoord2f( 0.0, 1.0 ); glVertex3f( -1.0, 1.0, 0.0 );
+            glEnd();
+        }
+        glRotatef( spin, 0.0, 0.0, 1.0 );
+        glColor4ub( star[loop].r, star[loop].g, star[loop].b, 255 );
+        glBegin( GL_QUADS );
+            glTexCoord2f( 0.0, 0.0 ); glVertex3f( -1.0, -1.0, 0.0 );
+            glTexCoord2f( 1.0, 0.0 ); glVertex3f( 1.0, -1.0, 0.0 );
+            glTexCoord2f( 1.0, 1.0 ); glVertex3f( 1.0, 1.0, 0.0 );
+            glTexCoord2f( 0.0, 1.0 ); glVertex3f( -1.0, 1.0, 0.0 );
+        glEnd();
 
-      xRot += xSpeed;
-      yRot += ySpeed;
+        spin += 0.01;
+        star[loop].angle += float(loop)/num;
+        star[loop].dist -= 0.01;
 
-      update();
+        if ( star[loop].dist < 0.0 )
+        {
+            star[loop].dist += 5.0;
+            star[loop].r = rand() % 256;
+            star[loop].g = rand() % 256;
+            star[loop].b = rand() % 256;
+        }
+    }
+
+    update();
 }
 
 void GLWidget::resizeGL( int width, int height )
@@ -128,72 +136,11 @@ void GLWidget::keyPressEvent( QKeyEvent *e )
 {
     switch ( e->key() )
       {
-    //按下了L键，就可以切换是否打开光源。
-      case Qt::Key_L:
-        light = !light;
-        if ( !light )
-        {
-          glDisable( GL_LIGHTING );
-        }
-        else
-        {
-          glEnable( GL_LIGHTING );
-        }
-        updateGL();
-        break;
-    case Qt::Key_B:
-        blend = !blend;
-        if ( blend )
-        {
-          glEnable( GL_BLEND );
-          glDisable( GL_DEPTH_TEST );
-        }
-        else
-        {
-          glDisable( GL_BLEND );
-          glEnable( GL_DEPTH_TEST );
-        }
-        updateGL();
-        break;
-    //按下了F键，就可以转换一下所使用的纹理（就是变换了纹理滤波方式的纹理）。
-      case Qt::Key_F:
-        filter += 1;;
-        if ( filter > 2 )
-        {
-          filter = 0;
-        }
-        updateGL();
-        break;
-    //按下了PageUp键，将木箱移向屏幕内部。
-      case Qt::Key_Comma:
-        zoom -= 0.2;
-        updateGL();
-        break;
-    //按下了PageDown键，将木箱移向屏幕外部。
-      case Qt::Key_Period:
-        zoom += 0.2;
-        updateGL();
-        break;
-    //按下了Up方向键，减少xSpeed。
-      case Qt::Key_Up:
-        xSpeed -= 0.01;
-        updateGL();
-        break;
-    //按下了Dowm方向键，增加xSpeed。
-      case Qt::Key_Down:
-        xSpeed += 0.01;
-        updateGL();
-        break;
-    //按下了Right方向键，增加ySpeed。
-      case Qt::Key_Right:
-        ySpeed += 0.01;
-        updateGL();
-        break;
-    //按下了Left方向键，减少ySpeed。
-      case Qt::Key_Left:
-        ySpeed -= 0.01;
-        updateGL();
-        break;
+        case Qt::Key_T:
+            twinkle = !twinkle;
+            updateGL();
+            break;
+
       case Qt::Key_F2:
         fullscreen = !fullscreen;
         if ( fullscreen )
@@ -212,11 +159,16 @@ void GLWidget::keyPressEvent( QKeyEvent *e )
     }
 }
 
+void GLWidget::timerEvent(QTimerEvent*)
+{
+    updateGL();
+}
+
 void GLWidget::loadGLTextures()
 {
     QImage tex, buf;
     //qDebug()<<QDir::currentPath();
-    if ( !buf.load( "../data/texture.png" ) )
+    if ( !buf.load( "../data/Star.bmp" ) )
     {
         qWarning( "Could not read image file, using single-color instead." );
         QImage dummy( 128, 128, QImage::Format_ARGB32 );
