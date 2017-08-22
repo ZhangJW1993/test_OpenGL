@@ -34,9 +34,9 @@ GLWidget::~GLWidget(){
 }
 
 void GLWidget::initializeGL(){
+
     //载入纹理。
     loadGLTextures();
-
     glEnable( GL_TEXTURE_2D );
     glShadeModel( GL_SMOOTH );
     glClearColor( 0.0, 0.0, 0.0, 0.5 );
@@ -177,38 +177,12 @@ void GLWidget::loadGLTextures()
     }
     tex = QGLWidget::convertToGLFormat( buf );
     //我们这里创建了3个纹理。
-    glGenTextures( 3, &texture[0] );
+    glGenTextures( 1, &texture[0] );
 
     glBindTexture( GL_TEXTURE_2D, texture[0] );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
     glTexImage2D( GL_TEXTURE_2D, 0, 3, tex.width(), tex.height(), 0,
-        GL_RGBA, GL_UNSIGNED_BYTE, tex.bits() );
-
-    glBindTexture( GL_TEXTURE_2D, texture[1] );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-    glTexImage2D( GL_TEXTURE_2D, 0, 3, tex.width(), tex.height(), 0,
-        GL_RGBA, GL_UNSIGNED_BYTE, tex.bits() );
-
-    //Mipmapping！当您向屏幕绘制一个mipmapped纹理的时候，OpenGL将选择它已经创建的外观最佳的纹理(带有更多细节)来绘制，而不仅仅是缩放原先的图像（这将导致细节丢失）
-    glBindTexture( GL_TEXTURE_2D, texture[2] );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST );
-
-    //可以使用任意的位图来创建纹理。OpenGL将自动将它缩放到正常的大小。
-
-    /**这一行生成 mipmapped 纹理。
-     * 使用三种颜色（红，绿，蓝）来生成一个2D纹理。
-     * tex.width()是位图宽度，tex.height()是位图高度，
-     * extureImage[0]->sizeY 是位图高度，
-     * GL_RGBA意味着我们依次使用RGBA色彩。
-     * GL_UNSIGNED_BYTE意味着纹理数据的单位是字节。
-     * tex.bits()指向我们创建纹理所用的位图。
-    **/
-    gluBuild2DMipmaps( GL_TEXTURE_2D, GL_RGB,
-                       tex.width(), tex.height(),
-                       GL_RGBA, GL_UNSIGNED_BYTE,
-                       tex.bits() );
+        GL_RGBA, GL_UNSIGNED_BYTE, tex.bits() );                            
 
 }
