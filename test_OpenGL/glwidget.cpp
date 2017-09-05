@@ -1,20 +1,35 @@
 #include "glwidget.h"
 
+#include <math.h>
 #include <QtOpenGL>
 #include <QCoreApplication>
 #include <GL/glu.h>
 //#include <qgl.h>
+static GLfloat boxcol[5][3] =
+{
+  { 1.0, 0.0, 0.0 },
+  { 1.0, 0.5, 0.0 },
+  { 1.0, 1.0, 0.0 },
+  { 0.0, 1.0, 0.0 },
+  { 0.0, 1.0, 1.0 }
+};
+
+static GLfloat topcol[5][3] =
+{
+  { 0.5, 0.0, 0.0 },
+  { 0.5, 0.25, 0.0 },
+  { 0.5, 0.5, 0.0 },
+  { 0.0, 0.5, 0.0 },
+  { 0.0, 0.5, 0.5 }
+};
 
 GLWidget::GLWidget( QWidget* parent, const char* name, bool fs )
     : QGLWidget( parent )
 {
     xRot = yRot = zRot = 0.0;
-    zoom = -15.0;
-    tilt = 90.0;
-    spin = 0.0;
-    loop = 0;
+    box = top = 0;
 
-    twinkle = false;
+    xLoop = yLoop = 0;
 
     fullscreen = fs;
     setGeometry( 0, 0, 640, 480 );
@@ -22,8 +37,6 @@ GLWidget::GLWidget( QWidget* parent, const char* name, bool fs )
 
     if ( fullscreen )
     showFullScreen();
-
-    startTimer( 5 );
 }
 
 GLWidget::~GLWidget(){
@@ -37,78 +50,43 @@ void GLWidget::initializeGL(){
 
     //载入纹理。
     loadGLTextures();
+    buildLists();
     glEnable( GL_TEXTURE_2D );
     glShadeModel( GL_SMOOTH );
     glClearColor( 0.0, 0.0, 0.0, 0.5 );
     glClearDepth( 1.0 );
     glEnable( GL_DEPTH_TEST );
     glDepthFunc( GL_LEQUAL );
+    glEnable( GL_LIGHT0 );
+    glEnable( GL_LIGHTING );
+    glEnable( GL_COLOR_MATERIAL );
+
     glHint( GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST );
 
-    glBlendFunc( GL_SRC_ALPHA, GL_ONE );
-    glEnable( GL_BLEND );
-    for ( loop = 0; loop < num; loop++ )
-    {
-        star[loop].angle = 0.0;
-        star[loop].dist = ( float(loop)/num ) * 5.0;
-        star[loop].r = rand() % 256;
-        star[loop].g = rand() % 256;
-        star[loop].b = rand() % 256;
-    }
 }
 
 void GLWidget::paintGL()
 {
     //clear屏幕和深度缓存。
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-
     glBindTexture( GL_TEXTURE_2D, texture[0] );
-    for ( loop = 0; loop < num; loop++ )
+
+    for ( yLoop = 1; yLoop < 6; yLoop++ )
     {
-        //绘制每颗星星之前，重置模型观察矩阵
-        glLoadIdentity();
-        glTranslatef( 0.0, 0.0, zoom );
-        glRotatef( tilt, 1.0, 0.0, 0.0 );
-        glRotatef( star[loop].angle, 0.0, 1.0, 0.0 );
-        glTranslatef( star[loop].dist, 0.0, 0.0 );  //
-        glRotatef( -star[loop].angle, 0.0, 1.0, 0.0 );
-        glRotatef( -tilt, 1.0, 0.0, 0.0 );
-
-        if ( twinkle )
+        for ( xLoop = 0; xLoop < yLoop; xLoop++ )
         {
-            glColor4ub( star[(num-loop)-1].r,
-                star[(num-loop)-1].g,
-                star[(num-loop)-1].b, 255 );
-            glBegin( GL_QUADS );
-                glTexCoord2f( 0.0, 0.0 ); glVertex3f( -1.0, -1.0, 0.0 );
-                glTexCoord2f( 1.0, 0.0 ); glVertex3f( 1.0, -1.0, 0.0 );
-                glTexCoord2f( 1.0, 1.0 ); glVertex3f( 1.0, 1.0, 0.0 );
-                glTexCoord2f( 0.0, 1.0 ); glVertex3f( -1.0, 1.0, 0.0 );
-            glEnd();
-        }
-        glRotatef( spin, 0.0, 0.0, 1.0 );
-        glColor4ub( star[loop].r, star[loop].g, star[loop].b, 255 );
-        glBegin( GL_QUADS );
-            glTexCoord2f( 0.0, 0.0 ); glVertex3f( -1.0, -1.0, 0.0 );
-            glTexCoord2f( 1.0, 0.0 ); glVertex3f( 1.0, -1.0, 0.0 );
-            glTexCoord2f( 1.0, 1.0 ); glVertex3f( 1.0, 1.0, 0.0 );
-            glTexCoord2f( 0.0, 1.0 ); glVertex3f( -1.0, 1.0, 0.0 );
-        glEnd();
+          glLoadIdentity();
+          glTranslatef( 1.4 + (float(xLoop) * 2.8) - (float(yLoop) * 1.4),
+              ( (6.0 - (float(yLoop)) ) * 2.4 ) - 7.0, -20.0 );
+          glRotatef( 45.0 - (2.0 * yLoop) + xRot, 1.0, 0.0, 0.0 );
+          glRotatef( 45.0 + yRot, 0.0, 1.0, 0.0 );
+          glColor3fv( boxcol[yLoop-1] );
+          glCallList( box );
 
-        spin += 0.01;
-        star[loop].angle += float(loop)/num;
-        star[loop].dist -= 0.01;
-
-        if ( star[loop].dist < 0.0 )
-        {
-            star[loop].dist += 5.0;
-            star[loop].r = rand() % 256;
-            star[loop].g = rand() % 256;
-            star[loop].b = rand() % 256;
+          glColor3fv( topcol[yLoop-1] );
+          glCallList( top );
         }
     }
-
-    update();
 }
 
 void GLWidget::resizeGL( int width, int height )
@@ -135,32 +113,44 @@ void GLWidget::resizeGL( int width, int height )
 void GLWidget::keyPressEvent( QKeyEvent *e )
 {
     switch ( e->key() )
-      {
-        case Qt::Key_T:
-            twinkle = !twinkle;
+    {
+        case Qt::Key_Up:
+            xRot -= 0.2;
             updateGL();
-            break;
-
-      case Qt::Key_F2:
-        fullscreen = !fullscreen;
-        if ( fullscreen )
-        {
-          showFullScreen();
-        }
-        else
-        {
-          showNormal();
-          setGeometry( 0, 0, 640, 480 );
-        }
-        update();
         break;
-      case Qt::Key_Escape:
-        close();
+        case Qt::Key_Down:
+            xRot += 0.2;
+            updateGL();
+        break;
+        case Qt::Key_Left:
+            yRot -= 0.2;
+            updateGL();
+        break;
+        case Qt::Key_Right:
+            yRot += 0.2;
+            updateGL();
+        break;
+        case Qt::Key_F2:
+            fullscreen = !fullscreen;
+            if ( fullscreen )
+            {
+              showFullScreen();
+            }
+            else
+            {
+              showNormal();
+              setGeometry( 0, 0, 640, 480 );
+            }
+            update();
+        break;
+        case Qt::Key_Escape:
+            close();
     }
 }
 
 void GLWidget::timerEvent(QTimerEvent*)
 {
+
     updateGL();
 }
 
@@ -168,7 +158,7 @@ void GLWidget::loadGLTextures()
 {
     QImage tex, buf;
     //qDebug()<<QDir::currentPath();
-    if ( !buf.load( "../data/Star.bmp" ) )
+    if ( !buf.load( "../data/Cube.bmp" ) )
     {
         qWarning( "Could not read image file, using single-color instead." );
         QImage dummy( 128, 128, QImage::Format_ARGB32 );
@@ -184,5 +174,57 @@ void GLWidget::loadGLTextures()
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
     glTexImage2D( GL_TEXTURE_2D, 0, 3, tex.width(), tex.height(), 0,
         GL_RGBA, GL_UNSIGNED_BYTE, tex.bits() );                            
+
+}
+
+void GLWidget::buildLists()
+{
+    box = glGenLists( 2 );
+    glNewList( box, GL_COMPILE );
+        //画一个没有顶部的盒子，它不会出现在屏幕上，只会存储在显示列表里。
+        glBegin( GL_QUADS );
+            glNormal3f( 0.0, -1.0, 0.0 );
+            glTexCoord2f( 1.0, 1.0 ); glVertex3f( -1.0, -1.0, -1.0 );
+            glTexCoord2f( 0.0, 1.0 ); glVertex3f(  1.0, -1.0, -1.0 );
+            glTexCoord2f( 0.0, 0.0 ); glVertex3f(  1.0, -1.0,  1.0 );
+            glTexCoord2f( 1.0, 0.0 ); glVertex3f( -1.0, -1.0,  1.0 );
+
+            glNormal3f( 0.0, 0.0, 1.0 );
+            glTexCoord2f( 0.0, 0.0 ); glVertex3f( -1.0, -1.0,  1.0 );
+            glTexCoord2f( 1.0, 0.0 ); glVertex3f(  1.0, -1.0,  1.0 );
+            glTexCoord2f( 1.0, 1.0 ); glVertex3f(  1.0,  1.0,  1.0 );
+            glTexCoord2f( 0.0, 1.0 ); glVertex3f( -1.0,  1.0,  1.0 );
+
+            glNormal3f( 0.0, 0.0, -1.0 );
+            glTexCoord2f( 1.0, 0.0 ); glVertex3f( -1.0, -1.0, -1.0 );
+            glTexCoord2f( 1.0, 1.0 ); glVertex3f( -1.0,  1.0, -1.0 );
+            glTexCoord2f( 0.0, 1.0 ); glVertex3f(  1.0,  1.0, -1.0 );
+            glTexCoord2f( 0.0, 0.0 ); glVertex3f(  1.0, -1.0, -1.0 );
+
+            glNormal3f( 1.0, 0.0, 0.0 );
+            glTexCoord2f( 1.0, 0.0 ); glVertex3f(  1.0, -1.0, -1.0 );
+            glTexCoord2f( 1.0, 1.0 ); glVertex3f(  1.0,  1.0, -1.0 );
+            glTexCoord2f( 0.0, 1.0 ); glVertex3f(  1.0,  1.0,  1.0 );
+            glTexCoord2f( 0.0, 0.0 ); glVertex3f(  1.0, -1.0,  1.0 );
+
+            glNormal3f( -1.0, 0.0, 0.0 );
+            glTexCoord2f( 0.0, 0.0 ); glVertex3f( -1.0, -1.0, -1.0 );
+            glTexCoord2f( 1.0, 0.0 ); glVertex3f( -1.0, -1.0,  1.0 );
+            glTexCoord2f( 1.0, 1.0 ); glVertex3f( -1.0,  1.0,  1.0 );
+            glTexCoord2f( 0.0, 1.0 ); glVertex3f( -1.0,  1.0, -1.0 );
+          glEnd();
+      glEndList();
+
+      //建立第二个显示列表。在上一个显示列表的指针上加1，就得到了第二个显示列表的指针。
+      top = box + 1;
+      glNewList( top, GL_COMPILE );
+        glBegin( GL_QUADS );
+        glNormal3f( 0.0, 1.0, 0.0 );
+            glTexCoord2f( 0.0, 1.0 ); glVertex3f( -1.0,  1.0, -1.0 );
+            glTexCoord2f( 0.0, 0.0 ); glVertex3f( -1.0,  1.0,  1.0 );
+            glTexCoord2f( 1.0, 0.0 ); glVertex3f(  1.0,  1.0,  1.0 );
+            glTexCoord2f( 1.0, 1.0 ); glVertex3f(  1.0,  1.0, -1.0 );
+        glEnd();
+      glEndList();
 
 }

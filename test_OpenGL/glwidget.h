@@ -32,19 +32,16 @@ protected:
     void timerEvent( QTimerEvent * );
 
     void loadGLTextures();
+    void buildLists();
 
     bool fullscreen;
 
     GLfloat xRot, yRot, zRot;
-    GLfloat zoom;
-    GLfloat tilt;
-    GLfloat spin;
-    GLuint loop;
+    GLuint box, top;
+
+    GLuint xLoop, yLoop;
+
     GLuint texture[1];
-
-    bool twinkle;
-
-    stars star[num];
 
 };
 
